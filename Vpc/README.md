@@ -24,6 +24,10 @@ The following resources are ceated:
 * 1 VPC based on a /16 CIDR block
 * 1 Internet Gateway
 * NATs, one per AZ to help with HA
+* 1 security group for the NAT:
+ * HTTP (port 80) internal-to-external
+ * HTTPS (port 443) internal-to-external
+ * NTP (port 123) internal-to-external
 * 1 IAM role for the NAT instances
 * 4 subnets per AZ:
  * 2 public subnets: general and ELB
