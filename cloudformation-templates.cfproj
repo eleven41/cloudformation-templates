@@ -21,8 +21,12 @@
     <Compile Include="Vpc\basic-vpc-3-az.template">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Websites\static-website.template">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Websites" />
     <Folder Include="Vpc" />
   </ItemGroup>
   <ItemGroup>
@@ -30,6 +34,9 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Vpc\README.md">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Websites\README.md">
       <SubType>Content</SubType>
     </Content>
   </ItemGroup>

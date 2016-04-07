@@ -1,0 +1,153 @@
+{
+	"AWSTemplateFormatVersion" : "2010-09-09",
+
+	"Description" : "",
+
+	"Parameters" : {
+		"DomainName": {
+			"Description": "The root domain name for the website. For example, eleven41.com",
+			"Type": "String"
+		},
+		"HostedZoneId": {
+			"Description": "The ID of the Route 53 hosted zone in which resource records will be created.",
+			"Type": "String"
+		}
+	},
+
+	"Resources" : {
+		"PrimaryBucket": {
+			"Type" : "AWS::S3::Bucket",
+			"Properties": {
+				"WebsiteConfiguration": {
+					"IndexDocument" : "index.html",
+					"ErrorDocument" : "error.html"
+				}
+			}
+		},
+		"RedirectBucket": {
+			"Type" : "AWS::S3::Bucket",
+			"Properties": {
+				"WebsiteConfiguration": {
+					"RedirectAllRequestsTo": {
+						"HostName" : { "Fn::Join": [ "", [ 
+							"www.", { "Ref": "DomainName" } 
+						] ] },
+						"Protocol" : "http"
+					}
+				}
+			}
+		},
+
+		"PrimaryDistribution": {
+			"Type": "AWS::CloudFront::Distribution",
+			"Properties": {
+				"DistributionConfig": {
+					"Aliases": [ 
+						{ "Fn::Join": [ "", [ 
+							"www.", { "Ref": "DomainName" } 
+						] ] }
+					],
+					"Comment": { "Fn::Join": [ "", [ 
+						"This distribution forwards requests to the S3 origin bucket ",
+						"for http://www.", { "Ref": "DomainName" } 
+					] ] },
+					"DefaultCacheBehavior": {
+						"AllowedMethods": [ "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT" ],
+						"ForwardedValues": {
+							"Cookies": {
+								"Forward": "none" 
+							},
+							"QueryString": "false"
+						}, 
+						"TargetOriginId": "primary-origin",
+						"ViewerProtocolPolicy": "allow-all"
+					},
+					"Enabled": true,
+					"Origins": [ {
+						"DomainName": { "Fn::Join": [ "", [
+							{"Ref": "PrimaryBucket"}, ".s3-website-", {"Ref": "AWS::Region"}, ".amazonaws.com"
+						] ] },
+						"Id" : "primary-origin",
+						"CustomOriginConfig": {
+							"OriginProtocolPolicy": "http-only"
+						}
+					}],
+					"PriceClass": "PriceClass_All"
+				}
+			}
+		},
+		"RedirectDistribution": {
+			"Type": "AWS::CloudFront::Distribution",
+			"Properties": {
+				"DistributionConfig": {
+					"Aliases": [ 
+						{ "Ref": "DomainName" }
+					],
+					"Comment": { "Fn::Join": [ "", [ 
+						"This distribution forwards requests to the S3 bucket used to ",
+						"redirect users to http://www.", { "Ref": "DomainName" } 
+					] ] },
+					"DefaultCacheBehavior": {
+						"AllowedMethods": [ "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT" ],
+						"ForwardedValues": {
+							"Cookies": {
+								"Forward": "none" 
+							},
+							"QueryString": "false"
+						}, 
+						"TargetOriginId": "redirect-origin",
+						"ViewerProtocolPolicy": "allow-all"
+					},
+					"Enabled": true,
+					"Origins": [ {
+						"DomainName": { "Fn::Join": [ "", [
+							{"Ref": "RedirectBucket"}, ".s3-website-", {"Ref": "AWS::Region"}, ".amazonaws.com"
+						] ] },
+						"Id" : "redirect-origin",
+						"CustomOriginConfig": {
+							"OriginProtocolPolicy": "http-only"
+						}
+					}],
+					"PriceClass": "PriceClass_All"
+				}
+			}
+		},
+
+		"PrimaryZone": {
+			"Type" : "AWS::Route53::RecordSetGroup",
+			"Properties": {
+				"HostedZoneId": {"Ref": "HostedZoneId"},
+				"RecordSets": [{
+					"Name": { "Fn::Join": [ "", [ 
+						"www.", { "Ref": "DomainName" } 
+					] ] },
+					"Type": "A",
+					"AliasTarget": {
+						"HostedZoneId": "Z2FDTNDATAQYW2",
+						"DNSName": {"Fn::GetAtt": ["PrimaryDistribution", "DomainName"]}
+					}
+				}]
+			}
+		},
+		"RedirectZone": {
+			"Type" : "AWS::Route53::RecordSetGroup",
+			"Properties": {
+				"HostedZoneId": {"Ref": "HostedZoneId"},
+				"RecordSets": [{
+					"Name": { "Ref": "DomainName" },
+					"Type": "A",
+					"AliasTarget": {
+						"HostedZoneId": "Z2FDTNDATAQYW2",
+						"DNSName": {"Fn::GetAtt": ["RedirectDistribution", "DomainName"]}
+					}
+				}]
+			}
+		} 
+	},
+
+	"Outputs" : {
+		"WebsiteBucket": {
+			"Value" : { "Ref" : "PrimaryBucket" }
+		}
+	}
+}

@@ -5,3 +5,7 @@ This is a library of re-usable AWS CloudFormation templates using "best practice
 ## Vpc/
 
 This folder includes templates for creating VPCs of various configurations.
+
+## Websites/
+
+This folder includes templates for creating websites (static, etc.).
