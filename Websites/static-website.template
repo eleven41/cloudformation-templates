@@ -24,6 +24,23 @@
 				}
 			}
 		},
+		"PrimaryBucketPolicy" : {
+			"Type" : "AWS::S3::BucketPolicy",
+			"Properties" : {
+				"Bucket" : {"Ref" : "PrimaryBucket"},
+				"PolicyDocument": {
+					"Statement":[ {
+						"Sid": "AllowPublicGet",
+						"Effect": "Allow",
+						"Principal": {
+							"AWS": "*"
+						},
+						"Action": "s3:GetObject",
+						"Resource": { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "PrimaryBucket" } , "/*" ]]}
+					}]
+				}
+			}
+		},
 		"RedirectBucket": {
 			"Type" : "AWS::S3::Bucket",
 			"Properties": {
